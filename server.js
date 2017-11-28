@@ -51,64 +51,119 @@ function protected(req, res, next) {
 }
 */
 
-var protected = function(req, res, next) {
+
+  // User.findOne({_id: req.session.uid}, function(err, user){
+  //   role = user.role
+  //   name = user.username
+
+function wardenRule(req,res,next) {
   User.findOne({_id: req.session.uid}, function(err, user){
-      role = user.role
-      name = user.username
-      // console.log('role ---> ', role)
-  if(role === 'warden' || role === 'guard' || role === 'visitor') {
-    res.sendFile('./html/lobby.html', {root:'./public'})
-    next()
+    role = user.role
 
-  } else if() {
-    res.sendFile('./html/visitors-lounge.html', {root:'./public'})
-    next()
-
-  } else if() {
-    res.sendFile('./html/cafeteria.html', {root:'./public'})
-    next()
-
-  } else if() {
-    res.sendFile('./html/wardens-office.html', {root:'./public'})
-    next()
-
-  } else if() {
-    res.sendFile('./html/cell-e.html', {root:'./public'})
-    next()
-
-  } else if() {
-    res.sendFile('./html/cell-m.html', {root:'./public'})
-    next()
-
-  } else {
-    console.log('no, no, no!')
-    res.redirect('/jail')
-  }
+    if(err) {
+      console.log('no user found ', err)
+      res.send({failure:'failure!'})
+    } else if(!user) {
+      res.send({failure:'failure!'})
+    } else {
+      if(role === 'warden') {
+        console.log(`you're the warden, do whatever you want`)
+        next()
+      } else {
+        console.log(`naughty, naughty! you're not allowed in here!`)
+        res.send(403)
+      }
+    }
   })
 }
 
-// var visitorRules = function(req,res,next) {
-//   User.findOne({_id: req.session.uid}, function(err, user){
-//     role = user.role
-//     name = user.username
-//   if(role === 'visitor') {
-//     res.sendFile('./html/lobby.html', {root:'./public'})
-//     res.sendFile('./html/visitors-lounge.html', {root:'./public'})
-//     next()
-//   } else {
-//     console.log('nope, nope, nope!')
-//     res.redirect('/jail')
-//   }
-//
-//   })
-// }
 
+function eCell(req,res,next) {
+  User.findOne({_id: req.session.uid}, function(err, user){
+    role = user.role
+    name = user.username
 
+    if(err) {
+      console.log('no user found ', err)
+      res.send({failure:'failure!'})
+    } else if(!user) {
+      res.send({failure:'failure!'})
+    } else {
+      if(role === 'warden' || role === 'guard' || name === 'Eve') {
+        console.log(`access granted`)
+        next()
+      } else {
+        console.log(`naughty, naughty! you're not allowed in here!`)
+        res.send(403)
+      }
+    }
+  })
+}
 
-// app.use(function(req,res,next) {
-//   console.log('session? ', req.session)
-//   next()
-// })
+function mCell(req,res,next) {
+  User.findOne({_id: req.session.uid}, function(err, user){
+    role = user.role
+    name = user.username
+
+    if(err) {
+      console.log('no user found ', err)
+      res.send({failure:'failure!'})
+    } else if(!user) {
+      res.send({failure:'failure!'})
+    } else {
+      if(role === 'warden' || role === 'guard' || name === 'Mallory') {
+        console.log(`access granted`)
+        next()
+      } else {
+        console.log(`naughty, naughty! you're not allowed in here!`)
+        res.send(403)
+      }
+    }
+  })
+}
+
+function visitorAccess(req,res,next) {
+  User.findOne({_id: req.session.uid}, function(err, user){
+    role = user.role
+
+    if(err) {
+      console.log('no user found ', err)
+      res.send({failure:'failure!'})
+    } else if(!user) {
+      res.send({failure:'failure!'})
+    } else {
+      if(role === 'warden' || role === 'guard' || role === 'visitor') {
+        console.log(`access granted`)
+        next()
+      } else {
+        console.log(`naughty, naughty! you're not allowed in here!`)
+        res.send(403)
+      }
+    }
+  })
+}
+
+function cafeteriaAccess(req,res,next) {
+  User.findOne({_id: req.session.uid}, function(err, user){
+    role = user.role
+
+    if(err) {
+      console.log('no user found ', err)
+      res.send({failure:'failure!'})
+    } else if(!user) {
+      res.send({failure:'failure!'})
+    } else {
+      if(role === 'warden' || role === 'guard' || role === 'prisoner') {
+        console.log(`access granted`)
+        next()
+      } else {
+        console.log(`naughty, naughty! you're not allowed in here!`)
+        res.send(403)
+      }
+    }
+  })
+}
+
 
 app.get('/', function(req, res){
     res.sendFile('./html/login.html', {root:'./public'});
@@ -118,27 +173,27 @@ app.get('/jail', function(req, res, next){
     res.sendFile('./html/jail.html', {root:'./public'});
 });
 
-app.get('/lobby', function(req, res, next){
+app.get('/lobby', visitorAccess, function(req, res, next){
     res.sendFile('./html/lobby.html', {root:'./public'});
 });
 
-app.get('/visitors-lounge', function(req, res, next){
+app.get('/visitors-lounge', visitorAccess, function(req, res, next){
     res.sendFile('./html/visitors-lounge.html', {root:'./public'});
 });
 
-app.get('/cafeteria', function(req, res, next){
+app.get('/cafeteria', cafeteriaAccess, function(req, res, next){
     res.sendFile('./html/cafeteria.html', {root:'./public'});
 });
 
-app.get('/wardens-office', function(req, res, next){
+app.get('/wardens-office', wardenRule, function(req, res, next){
     res.sendFile('./html/wardens-office.html', {root:'./public'});
 });
 
-app.get('/cell-e', function(req, res, next){
+app.get('/cell-e', eCell, function(req, res, next){
     res.sendFile('./html/cell-e.html', {root:'./public'});
 });
 
-app.get('/cell-m', function(req, res, next){
+app.get('/cell-m', mCell, function(req, res, next){
     res.sendFile('./html/cell-m.html', {root:'./public'});
 });
 
